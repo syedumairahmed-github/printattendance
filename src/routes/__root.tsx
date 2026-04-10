@@ -31,13 +31,13 @@ const jsonLd = {
           "@type": "ListItem",
           "position": 1,
           "name": "Home",
-          "item": "https://spontaneous-kheer-afbe8e.netlify.app/"
+          "item": "https://printattendance.netlify.app/"
         },
         {
           "@type": "ListItem",
           "position": 2,
           "name": "Attendance Sheet Generator",
-          "item": "https://spontaneous-kheer-afbe8e.netlify.app/"
+          "item": "https://printattendance.netlify.app/"
         }
       ]
     },
@@ -94,12 +94,12 @@ export const Route = createRootRoute({
       { property: 'og:type', content: 'website' },
       { property: 'og:title', content: 'AttendanceSheet Pro — Free Attendance Register Generator' },
       { property: 'og:description', content: 'Generate professional attendance sheets for schools, colleges, and training institutes. Export to Excel or PDF instantly.' },
-      { property: 'og:url', content: 'https://spontaneous-kheer-afbe8e.netlify.app/' },
+      { property: 'og:url', content: 'https://printattendance.netlify.app/' },
       { property: 'og:site_name', content: 'AttendanceSheet Pro' },
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:title', content: 'AttendanceSheet Pro — Free Attendance Register Generator' },
       { name: 'twitter:description', content: 'Generate professional attendance sheets for schools, colleges, and training institutes. Export to Excel or PDF.' },
-      { rel: 'canonical', href: 'https://spontaneous-kheer-afbe8e.netlify.app/' },
+      { rel: 'canonical', href: 'https://printattendance.netlify.app/' },
     ],
     links: [
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
