@@ -1,0 +1,58 @@
+{
+  "faq": [
+    {
+      "q": "How do I generate an attendance sheet?",
+      "a": "Use our 4-step wizard: enter institute details in Step 1, select the month and year in Step 2, import your student list in Step 3, then preview and download as Excel or PDF in Step 4."
+    },
+    {
+      "q": "Can I save different classes or batches?",
+      "a": "Yes! Use the Profile selector at the top of the generator tool to create distinct profiles for each class you teach. These are saved securely in your browser."
+    },
+    {
+      "q": "Can I export attendance sheets to Excel?",
+      "a": "Yes. Click the \"Export Excel\" button to download a formatted XLSX file with all student rows and working-day columns."
+    },
+    {
+      "q": "Does the tool exclude weekends automatically?",
+      "a": "Yes. Saturdays and Sundays are excluded by default. You can also mark custom regional holidays by clicking on the dates in Step 2."
+    }
+  ],
+  "features": [
+    {
+      "icon": "LayoutTemplate",
+      "color": "blue",
+      "title": "Multiple Class Profiles",
+      "desc": "Teach multiple grades? Save discrete class profiles and instantly switch between them without re-entering data."
+    },
+    {
+      "icon": "CalendarDays",
+      "color": "indigo",
+      "title": "Smart Holiday Engine",
+      "desc": "Weekends are auto-excluded. One-click region holidays or manual overrides for a perfect working day count."
+    },
+    {
+      "icon": "Users",
+      "color": "teal",
+      "title": "Universal Data Import",
+      "desc": "Import from CSV, Excel, or directly via public Google Sheets and Excel Online URLs with smart column mapping."
+    },
+    {
+      "icon": "FileSpreadsheet",
+      "color": "emerald",
+      "title": "Excel Export (XLSX)",
+      "desc": "Download a beautifully formatted spreadsheet with all student rows and perfectly calculated attendance columns."
+    },
+    {
+      "icon": "FileText",
+      "color": "rose",
+      "title": "Print-Ready PDF",
+      "desc": "Generate high-resolution PDFs in landscape A4, complete with institute headers and signature lines."
+    },
+    {
+      "icon": "Save",
+      "color": "amber",
+      "title": "Local Privacy",
+      "desc": "Your data never leaves your device. Auto-saved directly to your browser for ultimate privacy and speed."
+    }
+  ]
+}

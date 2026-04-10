@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+Sitemap: https://attendance-sheet-pro.netlify.app/sitemap.xml

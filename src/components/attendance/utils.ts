@@ -46,16 +46,27 @@ export function parseStudentText(text: string, extraColumns: string[]): Student[
   })
 }
 
-export function saveToLocalStorage(cfg: AttendanceConfig) {
+export function saveWorkspace(state: import('./types').WorkspaceState) {
   try {
-    localStorage.setItem('attendanceConfig', JSON.stringify(cfg))
+    localStorage.setItem('attendanceWorkspace', JSON.stringify(state))
   } catch {}
 }
 
-export function loadFromLocalStorage(): AttendanceConfig | null {
+export function loadWorkspace(): import('./types').WorkspaceState | null {
   try {
-    const raw = localStorage.getItem('attendanceConfig')
+    const raw = localStorage.getItem('attendanceWorkspace')
     if (raw) return JSON.parse(raw)
+    
+    // Migration from old single config
+    const oldRaw = localStorage.getItem('attendanceConfig')
+    if (oldRaw) {
+      const oldCfg = JSON.parse(oldRaw)
+      return {
+        activeProfileId: 'default',
+        darkMode: oldCfg.darkMode || false,
+        profiles: [{ id: 'default', name: 'Default Profile', config: oldCfg }]
+      }
+    }
   } catch {}
   return null
 }

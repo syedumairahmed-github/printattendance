@@ -102,9 +102,15 @@ export const Route = createRootRoute({
       { rel: 'canonical', href: 'https://spontaneous-kheer-afbe8e.netlify.app/' },
     ],
     links: [
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap' },
       { rel: 'icon', href: '/favicon.ico' },
     ],
     scripts: [
+      {
+        src: 'https://identity.netlify.com/v1/netlify-identity-widget.js',
+      },
       {
         type: 'application/ld+json',
         children: JSON.stringify(jsonLd),
@@ -116,13 +122,24 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="antialiased font-sans">
       <head>
         <HeadContent />
       </head>
       <body>
         {children}
         <Scripts />
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            if (window.netlifyIdentity) {
+              window.netlifyIdentity.on("init", user => {
+                if (!user) {
+                    document.location.href = "/admin-dashboard";
+                }
+              });
+            }
+          `
+        }} />
       </body>
     </html>
   )

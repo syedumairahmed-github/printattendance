@@ -2,6 +2,7 @@ import React, { memo, useMemo, useState } from 'react'
 import type { AttendanceConfig } from './types'
 import { getWorkingDays, getMonthName, getSmartFilename } from './utils'
 import { Tooltip } from './Tooltip'
+import { FileSpreadsheet, FileText, Printer, FileDown, ShieldAlert } from 'lucide-react'
 
 interface Props {
   config: AttendanceConfig
@@ -79,7 +80,7 @@ export const PreviewStep = memo(function PreviewStep({ config, onChange }: Props
         startY: 30,
         theme: 'grid',
         styles: { fontSize: 7, cellPadding: 1.5 },
-        headStyles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold' },
+        headStyles: { fillColor: [24, 24, 27], textColor: 255, fontStyle: 'bold' }, // zinc-900
         columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 12 }, 2: { cellWidth: 30 }, 3: { cellWidth: 30 } },
       })
 
@@ -108,17 +109,18 @@ export const PreviewStep = memo(function PreviewStep({ config, onChange }: Props
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      
       {/* Export Options */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div>
-          <label className="text-sm font-medium mr-2">
-            Watermark <Tooltip text="Add a diagonal watermark text on PDF export" />
+      <div className="bg-zinc-50 dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 print:hidden flex flex-col md:flex-row gap-6 items-center justify-between">
+        <div className="w-full md:w-auto flex-1">
+          <label className="flex items-center gap-2 text-sm font-semibold mb-2 text-zinc-900 dark:text-zinc-100">
+            <ShieldAlert size={16} className="text-zinc-400" /> Document Watermark (PDF)
           </label>
           <select
             value={config.watermark}
             onChange={e => onChange({ watermark: e.target.value as any })}
-            className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-black dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+            className="w-full md:w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 shadow-sm appearance-none cursor-pointer"
             aria-label="Watermark option"
           >
             {WATERMARK_OPTIONS.map(o => (
@@ -126,39 +128,43 @@ export const PreviewStep = memo(function PreviewStep({ config, onChange }: Props
             ))}
           </select>
         </div>
-        <div className="flex-1" />
-        <button
-          onClick={exportExcel}
-          disabled={!!exporting}
-          className="px-4 py-2 border-2 border-black dark:border-white rounded-lg text-sm font-semibold hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all disabled:opacity-50"
-          aria-label="Export to Excel"
-        >
-          {exporting === 'excel' ? 'Generating…' : '⬇ Export Excel'}
-        </button>
-        <button
-          onClick={exportPDF}
-          disabled={!!exporting}
-          className="px-4 py-2 bg-black text-white dark:bg-white dark:text-black rounded-lg text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-200 transition-all disabled:opacity-50"
-          aria-label="Export to PDF"
-        >
-          {exporting === 'pdf' ? 'Generating…' : '⬇ Export PDF'}
-        </button>
-        <button
-          onClick={handlePrint}
-          className="px-4 py-2 border rounded-lg text-sm font-medium hover:border-black dark:border-gray-600 dark:hover:border-white"
-          aria-label="Print attendance sheet"
-        >
-          🖨 Print
-        </button>
+
+        <div className="w-full md:w-auto flex flex-wrap gap-3 mt-4 md:mt-0">
+          <button
+            onClick={exportExcel}
+            disabled={!!exporting || config.students.length === 0}
+            className="flex-1 md:flex-none px-5 py-2.5 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 rounded-xl text-sm font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ring-zinc-900 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {exporting === 'excel' ? <FileDown size={18} className="animate-bounce" /> : <FileSpreadsheet size={18} />} Excel
+          </button>
+          
+          <button
+            onClick={exportPDF}
+            disabled={!!exporting || config.students.length === 0}
+            className="flex-1 md:flex-none px-5 py-2.5 bg-rose-600 text-white rounded-xl text-sm font-semibold hover:bg-rose-700 hover:shadow-lg hover:-translate-y-0.5 transition-all outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ring-rose-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {exporting === 'pdf' ? <FileDown size={18} className="animate-bounce" /> : <FileText size={18} />} PDF
+          </button>
+          
+          <button
+            onClick={handlePrint}
+            disabled={config.students.length === 0}
+            className="flex-1 md:flex-none px-5 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl text-sm font-semibold hover:border-zinc-400 dark:hover:border-zinc-600 transition-all outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ring-zinc-900 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            <Printer size={18} className="text-zinc-500" /> Print
+          </button>
+        </div>
       </div>
 
       {/* Preview Table */}
-      <div className="border rounded-lg overflow-x-auto print:border-0" id="print-area">
+      <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-x-auto bg-white dark:bg-zinc-950 shadow-sm print:border-0 print:shadow-none" id="print-area">
         <AttendanceTable config={config} workingDays={workingDays} />
       </div>
 
       {config.students.length === 0 && (
-        <p className="text-center text-sm text-gray-400 py-4">No students to preview. Go back and import students.</p>
+        <div className="text-center py-12 text-zinc-500 text-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-zinc-100 dark:border-zinc-800/50 print:hidden">
+          No students to preview. Go back to step 3 to import students.
+        </div>
       )}
     </div>
   )
@@ -170,83 +176,86 @@ const AttendanceTable = memo(function AttendanceTable({ config, workingDays }: {
   return (
     <div className="min-w-max">
       {/* Sheet Header */}
-      <div className={`p-4 border-b print:border-b ${headerLayout === 'centered' ? 'text-center' : headerLayout === 'split' ? 'flex justify-between items-start px-6' : 'pl-6 border-l-4 border-black'}`}>
+      <div className={`p-6 border-b border-zinc-200 dark:border-zinc-800 print:border-b-2 print:border-zinc-900 ${
+        headerLayout === 'centered' ? 'text-center' : headerLayout === 'split' ? 'flex justify-between items-start' : 'pl-6 border-l-4 border-zinc-900 dark:border-white'
+      }`}>
         {headerLayout === 'centered' && (
           <>
-            <h2 className="text-lg font-bold">{instituteName || 'Institute Name'}</h2>
-            <p className="text-xs text-gray-500">{courseName} | {batchName} | {instructorName}</p>
-            <p className="text-xs font-medium mt-1">Attendance Register — {getMonthName(month)} {year}</p>
+            <h2 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight">{instituteName || 'Institute Name'}</h2>
+            <p className="text-xs text-zinc-500 font-semibold mt-1 uppercase tracking-wider">{courseName} • {batchName} • {instructorName}</p>
+            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-2">Attendance Register — {getMonthName(month)} {year}</p>
           </>
         )}
         {headerLayout === 'split' && (
           <>
             <div>
-              <h2 className="text-lg font-bold">{instituteName || 'Institute Name'}</h2>
-              <p className="text-xs text-gray-500">{courseName}</p>
+              <h2 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight">{instituteName || 'Institute Name'}</h2>
+              <p className="text-xs text-zinc-500 font-semibold mt-1 uppercase tracking-wider">{courseName}</p>
             </div>
-            <div className="text-right text-xs text-gray-500">
-              <p>{batchName}</p>
-              <p>{instructorName}</p>
-              <p className="font-medium text-black dark:text-white">{getMonthName(month)} {year}</p>
+            <div className="text-right">
+              <p className="text-xs text-zinc-500 font-semibold mt-1 uppercase tracking-wider">{batchName} • {instructorName}</p>
+              <p className="font-black text-zinc-900 dark:text-zinc-100 mt-2">Register: {getMonthName(month)} {year}</p>
             </div>
           </>
         )}
         {headerLayout === 'boxed-left' && (
           <>
-            <h2 className="text-lg font-bold">{instituteName || 'Institute Name'}</h2>
-            <p className="text-xs text-gray-500">{courseName} · {batchName} · {instructorName} · {getMonthName(month)} {year}</p>
+            <h2 className="text-xl font-black text-zinc-900 dark:text-white uppercase tracking-tight">{instituteName || 'Institute Name'}</h2>
+            <p className="text-xs text-zinc-500 font-semibold mt-1 uppercase tracking-wider">{courseName} • {batchName} • {instructorName} • {getMonthName(month)} {year}</p>
           </>
         )}
       </div>
       {/* Table */}
-      <table className="text-xs border-collapse w-full" role="table" aria-label="Attendance sheet preview">
+      <table className="text-xs border-collapse w-full relative" role="table">
         <thead>
-          <tr className="bg-black text-white dark:bg-white dark:text-black">
-            <th className="border border-gray-300 px-2 py-1.5 whitespace-nowrap" scope="col">#</th>
-            <th className="border border-gray-300 px-2 py-1.5 whitespace-nowrap" scope="col">Student ID</th>
-            <th className="border border-gray-300 px-2 py-1.5 whitespace-nowrap min-w-[120px]" scope="col">Student Name</th>
-            <th className="border border-gray-300 px-2 py-1.5 whitespace-nowrap min-w-[120px]" scope="col">Father's Name</th>
+          <tr className="bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-b border-zinc-900 dark:border-white">
+            <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap" scope="col">#</th>
+            <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap" scope="col">ID</th>
+            <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap min-w-[140px] text-left" scope="col">Student Name</th>
+            <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap min-w-[140px] text-left" scope="col">Father's Name</th>
             {extraColumns.map(col => (
-              <th key={col} className="border border-gray-300 px-2 py-1.5 whitespace-nowrap" scope="col">{col}</th>
+              <th key={col} className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap text-left" scope="col">{col}</th>
             ))}
             {workingDays.map(d => (
-              <th key={d} className="border border-gray-300 px-1.5 py-1.5 w-7 text-center" scope="col">{d}</th>
+              <th key={d} className="border-r border-zinc-700 dark:border-zinc-200 px-1 py-2 font-bold w-6 text-center" scope="col">{d}</th>
             ))}
-            <th className="border border-gray-300 px-2 py-1.5 whitespace-nowrap" scope="col">Total</th>
+            <th className="px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap" scope="col">Total</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
           {students.map((s, idx) => (
-            <tr key={s.id} className={idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'}>
-              <td className="border border-gray-200 px-2 py-1.5 text-center text-gray-500">{idx + 1}</td>
-              <td className="border border-gray-200 px-2 py-1.5 text-center">{s.id}</td>
-              <td className="border border-gray-200 px-2 py-1.5 font-medium">{s.name}</td>
-              <td className="border border-gray-200 px-2 py-1.5">{s.fatherName}</td>
+            <tr key={s.id} className={idx % 2 === 0 ? 'bg-white dark:bg-zinc-950' : 'bg-zinc-50/80 dark:bg-zinc-900/50'}>
+              <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-center font-mono text-[10px] text-zinc-500">{idx + 1}</td>
+              <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-center font-mono text-[10px] text-zinc-600 dark:text-zinc-400">{s.id}</td>
+              <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100">{s.name}</td>
+              <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-zinc-600 dark:text-zinc-400">{s.fatherName}</td>
               {extraColumns.map(col => (
-                <td key={col} className="border border-gray-200 px-2 py-1.5">{s.extraData[col] || ''}</td>
+                <td key={col} className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-zinc-600 dark:text-zinc-400">{s.extraData[col] || ''}</td>
               ))}
               {workingDays.map(d => (
-                <td key={d} className="border border-gray-200 w-7 h-7 text-center"></td>
+                <td key={d} className="border-r border-zinc-200 dark:border-zinc-800 p-0 text-center relative group max-w-6">
+                  {/* Empty cell for marking */}
+                </td>
               ))}
-              <td className="border border-gray-200 px-2 py-1.5 text-center font-bold">{workingDays.length}</td>
+              <td className="px-3 py-2 text-center font-black text-zinc-900 dark:text-zinc-100">{workingDays.length}</td>
             </tr>
           ))}
           {/* Summary Row */}
           {students.length > 0 && (
-            <tr className="bg-black text-white dark:bg-white dark:text-black font-bold">
-              <td colSpan={4 + extraColumns.length} className="border border-gray-300 px-2 py-1.5 text-right text-xs">Total Working Days →</td>
+            <tr className="bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-white border-t-2 border-zinc-900 dark:border-zinc-700">
+              <td colSpan={4 + extraColumns.length} className="border-r border-zinc-300 dark:border-zinc-700 px-4 py-2.5 text-right text-[10px] uppercase tracking-widest font-bold">Total Working Days →</td>
               {workingDays.map(d => (
-                <td key={d} className="border border-gray-300 w-7 h-7 text-center text-xs">·</td>
+                <td key={d} className="border-r border-zinc-300 dark:border-zinc-700 p-0 text-center text-[8px] text-zinc-400">·</td>
               ))}
-              <td className="border border-gray-300 px-2 py-1.5 text-center">{workingDays.length}</td>
+              <td className="px-3 py-2.5 text-center font-black">{workingDays.length}</td>
             </tr>
           )}
         </tbody>
       </table>
       {/* Signature Footer */}
-      <div className="flex justify-between px-6 py-4 text-xs text-gray-500 border-t print:block">
-        <span>Instructor Signature: _____________________________</span>
-        <span>Date: ___________________</span>
+      <div className="flex justify-between px-8 py-8 text-xs font-semibold text-zinc-500 uppercase tracking-widest print:block mt-8">
+        <span>Instructor Signature: <span className="inline-block w-48 border-b border-zinc-300 dark:border-zinc-700"></span></span>
+        <span>Date: <span className="inline-block w-32 border-b border-zinc-300 dark:border-zinc-700"></span></span>
       </div>
     </div>
   )

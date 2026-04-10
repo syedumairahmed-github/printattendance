@@ -41,3 +41,15 @@ export const defaultConfig: AttendanceConfig = {
   watermark: '',
   darkMode: false,
 }
+
+export interface ClassProfile {
+  id: string
+  name: string // e.g. "Grade 10 - Mathematics"
+  config: AttendanceConfig
+}
+
+export interface WorkspaceState {
+  activeProfileId: string
+  profiles: ClassProfile[]
+  darkMode: boolean
+}
