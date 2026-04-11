@@ -129,17 +129,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         {children}
         <Scripts />
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            if (window.netlifyIdentity) {
-              window.netlifyIdentity.on("init", user => {
-                if (!user) {
-                    document.location.href = "/admin-dashboard";
-                }
-              });
-            }
-          `
-        }} />
       </body>
     </html>
   )
