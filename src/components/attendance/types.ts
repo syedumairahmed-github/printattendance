@@ -8,6 +8,25 @@ export interface Student {
   extraData: Record<string, string>
 }
 
+/**
+ * Controls which default columns are shown in the attendance sheet.
+ * Each key maps to: { visible: boolean, label: string }
+ * label lets the user rename the column header.
+ */
+export interface ColumnVisibility {
+  serialNo: { visible: boolean; label: string }
+  id: { visible: boolean; label: string }
+  name: { visible: boolean; label: string }
+  fatherName: { visible: boolean; label: string }
+}
+
+export const defaultColumnVisibility: ColumnVisibility = {
+  serialNo:   { visible: true, label: '#' },
+  id:         { visible: true, label: 'ID' },
+  name:       { visible: true, label: 'Student Name' },
+  fatherName: { visible: true, label: "Father's Name" },
+}
+
 export interface AttendanceConfig {
   // Branding
   instituteName: string
@@ -15,6 +34,7 @@ export interface AttendanceConfig {
   batchName: string
   instructorName: string
   headerLayout: HeaderLayout
+  columnVisibility: ColumnVisibility
   extraColumns: string[]
   // Timeline
   year: number
@@ -33,6 +53,7 @@ export const defaultConfig: AttendanceConfig = {
   batchName: '',
   instructorName: '',
   headerLayout: 'centered',
+  columnVisibility: defaultColumnVisibility,
   extraColumns: [],
   year: new Date().getFullYear(),
   month: new Date().getMonth(),

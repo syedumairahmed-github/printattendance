@@ -1,5 +1,6 @@
 import React, { memo, useMemo, useState } from 'react'
 import type { AttendanceConfig } from './types'
+import { defaultColumnVisibility } from './types'
 import { getWorkingDays, getMonthName, getSmartFilename } from './utils'
 import { Tooltip } from './Tooltip'
 import { FileSpreadsheet, FileText, Printer, FileDown, ShieldAlert } from 'lucide-react'
@@ -20,18 +21,47 @@ export const PreviewStep = memo(function PreviewStep({ config, onChange }: Props
   const [exporting, setExporting] = useState<string | null>(null)
   const workingDays = useMemo(() => getWorkingDays(config.year, config.month, config.holidays), [config.year, config.month, config.holidays])
 
+  // Ensure columnVisibility always exists (migration guard)
+  const colVis = config.columnVisibility ?? defaultColumnVisibility
+
   async function exportExcel() {
     setExporting('excel')
     try {
       const { utils, writeFile } = await import('xlsx')
       const wb = utils.book_new()
-      const headers = ['S.No', 'Student ID', 'Name', "Father's Name", ...config.extraColumns, ...workingDays.map(d => `${d}/${config.month + 1}`), 'Total']
-      const rows = config.students.map((s, idx) => [
-        idx + 1, s.id, s.name, s.fatherName,
-        ...config.extraColumns.map(c => s.extraData[c] || ''),
-        ...workingDays.map(() => ''),
-        workingDays.length,
-      ])
+
+      // Build headers dynamically
+      const headers: string[] = []
+      const colWidths: number[] = []
+      if (colVis.serialNo.visible)   { headers.push(colVis.serialNo.label);   colWidths.push(8) }
+      if (colVis.id.visible)         { headers.push(colVis.id.label);          colWidths.push(12) }
+      if (colVis.name.visible)       { headers.push(colVis.name.label);        colWidths.push(30) }
+      if (colVis.fatherName.visible) { headers.push(colVis.fatherName.label);  colWidths.push(30) }
+      headers.push(...config.extraColumns)
+      headers.push(...workingDays.map(d => `${d}/${config.month + 1}`))
+      headers.push('Total')
+
+      const rows = config.students.map((s, idx) => {
+        const row: (string | number)[] = []
+        if (colVis.serialNo.visible)   row.push(idx + 1)
+        if (colVis.id.visible)         row.push(s.id)
+        if (colVis.name.visible)       row.push(s.name)
+        if (colVis.fatherName.visible) row.push(s.fatherName)
+        row.push(...config.extraColumns.map(c => s.extraData[c] || ''))
+        row.push(...workingDays.map(() => ''))
+        row.push(workingDays.length)
+        return row
+      })
+
+      // Summary row
+      const summaryRow: (string | number)[] = []
+      const baseColCount = [colVis.serialNo, colVis.id, colVis.name, colVis.fatherName].filter(c => c.visible).length
+      const totalFixedCols = baseColCount + config.extraColumns.length
+      summaryRow.push(...Array(totalFixedCols - 1).fill(''))
+      summaryRow.push('Total Working Days →')
+      summaryRow.push(...workingDays.map(() => ''))
+      summaryRow.push(workingDays.length)
+
       const ws = utils.aoa_to_sheet([
         [`${config.instituteName} — Attendance Register`],
         [`Course: ${config.courseName} | Batch: ${config.batchName} | Instructor: ${config.instructorName}`],
@@ -39,7 +69,7 @@ export const PreviewStep = memo(function PreviewStep({ config, onChange }: Props
         [],
         headers,
         ...rows,
-        ['', '', 'Total Working Days', '', ...config.extraColumns.map(() => ''), ...workingDays.map(() => ''), workingDays.length],
+        summaryRow,
       ])
       ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }]
       utils.book_append_sheet(wb, ws, `${getMonthName(config.month)} ${config.year}`)
@@ -56,16 +86,39 @@ export const PreviewStep = memo(function PreviewStep({ config, onChange }: Props
       const { default: autoTable } = await import('jspdf-autotable')
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
-      const headers = ['#', 'ID', 'Name', "Father's Name", ...config.extraColumns, ...workingDays.map(d => String(d)), 'Total']
-      const rows = config.students.map((s, idx) => [
-        String(idx + 1), s.id, s.name, s.fatherName,
-        ...config.extraColumns.map(c => s.extraData[c] || ''),
+      // Build headers dynamically
+      const headers: string[] = []
+      if (colVis.serialNo.visible)   headers.push(colVis.serialNo.label)
+      if (colVis.id.visible)         headers.push(colVis.id.label)
+      if (colVis.name.visible)       headers.push(colVis.name.label)
+      if (colVis.fatherName.visible) headers.push(colVis.fatherName.label)
+      headers.push(...config.extraColumns)
+      headers.push(...workingDays.map(d => String(d)))
+      headers.push('Total')
+
+      const rows = config.students.map((s, idx) => {
+        const row: string[] = []
+        if (colVis.serialNo.visible)   row.push(String(idx + 1))
+        if (colVis.id.visible)         row.push(s.id)
+        if (colVis.name.visible)       row.push(s.name)
+        if (colVis.fatherName.visible) row.push(s.fatherName)
+        row.push(...config.extraColumns.map(c => s.extraData[c] || ''))
+        row.push(...workingDays.map(() => ''))
+        row.push(String(workingDays.length))
+        return row
+      })
+
+      const baseColCount = [colVis.serialNo, colVis.id, colVis.name, colVis.fatherName].filter(c => c.visible).length
+      const totalFixedCols = baseColCount + config.extraColumns.length
+      const summaryRow: string[] = [
+        ...Array(totalFixedCols - 1).fill(''),
+        'Total Working Days →',
         ...workingDays.map(() => ''),
         String(workingDays.length),
-      ])
-      rows.push(['', '', 'Total Working Days', '', ...config.extraColumns.map(() => ''), ...workingDays.map(() => ''), String(workingDays.length)])
+      ]
+      rows.push(summaryRow)
 
-      // Header
+      // Header text
       doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
       doc.text(config.instituteName || 'Institute', 148, 14, { align: 'center' })
@@ -74,14 +127,22 @@ export const PreviewStep = memo(function PreviewStep({ config, onChange }: Props
       doc.text(`Course: ${config.courseName || '—'} | Batch: ${config.batchName || '—'} | Instructor: ${config.instructorName || '—'}`, 148, 20, { align: 'center' })
       doc.text(`Attendance Register — ${getMonthName(config.month)} ${config.year} | Working Days: ${workingDays.length}`, 148, 25, { align: 'center' })
 
+      // Build columnStyles dynamically
+      const columnStyles: Record<number, object> = {}
+      let colIdx = 0
+      if (colVis.serialNo.visible)   { columnStyles[colIdx++] = { cellWidth: 8 } }
+      if (colVis.id.visible)         { columnStyles[colIdx++] = { cellWidth: 12 } }
+      if (colVis.name.visible)       { columnStyles[colIdx++] = { cellWidth: 30 } }
+      if (colVis.fatherName.visible) { columnStyles[colIdx++] = { cellWidth: 30 } }
+
       autoTable(doc, {
         head: [headers],
         body: rows,
         startY: 30,
         theme: 'grid',
         styles: { fontSize: 7, cellPadding: 1.5 },
-        headStyles: { fillColor: [24, 24, 27], textColor: 255, fontStyle: 'bold' }, // zinc-900
-        columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 12 }, 2: { cellWidth: 30 }, 3: { cellWidth: 30 } },
+        headStyles: { fillColor: [24, 24, 27], textColor: 255, fontStyle: 'bold' },
+        columnStyles,
       })
 
       // Footer
@@ -172,6 +233,11 @@ export const PreviewStep = memo(function PreviewStep({ config, onChange }: Props
 
 const AttendanceTable = memo(function AttendanceTable({ config, workingDays }: { config: AttendanceConfig; workingDays: number[] }) {
   const { instituteName, courseName, batchName, instructorName, month, year, headerLayout, extraColumns, students } = config
+  const colVis = config.columnVisibility ?? defaultColumnVisibility
+
+  // Count visible default cols for colspan in summary row
+  const visibleDefaultCount = [colVis.serialNo, colVis.id, colVis.name, colVis.fatherName].filter(c => c.visible).length
+  const totalLeadingCols = visibleDefaultCount + extraColumns.length
 
   return (
     <div className="min-w-max">
@@ -205,14 +271,23 @@ const AttendanceTable = memo(function AttendanceTable({ config, workingDays }: {
           </>
         )}
       </div>
+
       {/* Table */}
       <table className="text-xs border-collapse w-full relative" role="table">
         <thead>
           <tr className="bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-b border-zinc-900 dark:border-white">
-            <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap" scope="col">#</th>
-            <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap" scope="col">ID</th>
-            <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap min-w-[140px] text-left" scope="col">Student Name</th>
-            <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap min-w-[140px] text-left" scope="col">Father's Name</th>
+            {colVis.serialNo.visible && (
+              <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap" scope="col">{colVis.serialNo.label}</th>
+            )}
+            {colVis.id.visible && (
+              <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap" scope="col">{colVis.id.label}</th>
+            )}
+            {colVis.name.visible && (
+              <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap min-w-[140px] text-left" scope="col">{colVis.name.label}</th>
+            )}
+            {colVis.fatherName.visible && (
+              <th className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap min-w-[140px] text-left" scope="col">{colVis.fatherName.label}</th>
+            )}
             {extraColumns.map(col => (
               <th key={col} className="border-r border-zinc-700 dark:border-zinc-200 px-3 py-2 font-semibold uppercase tracking-wider whitespace-nowrap text-left" scope="col">{col}</th>
             ))}
@@ -225,10 +300,18 @@ const AttendanceTable = memo(function AttendanceTable({ config, workingDays }: {
         <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
           {students.map((s, idx) => (
             <tr key={s.id} className={idx % 2 === 0 ? 'bg-white dark:bg-zinc-950' : 'bg-zinc-50/80 dark:bg-zinc-900/50'}>
-              <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-center font-mono text-[10px] text-zinc-500">{idx + 1}</td>
-              <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-center font-mono text-[10px] text-zinc-600 dark:text-zinc-400">{s.id}</td>
-              <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100">{s.name}</td>
-              <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-zinc-600 dark:text-zinc-400">{s.fatherName}</td>
+              {colVis.serialNo.visible && (
+                <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-center font-mono text-[10px] text-zinc-500">{idx + 1}</td>
+              )}
+              {colVis.id.visible && (
+                <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-center font-mono text-[10px] text-zinc-600 dark:text-zinc-400">{s.id}</td>
+              )}
+              {colVis.name.visible && (
+                <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100">{s.name}</td>
+              )}
+              {colVis.fatherName.visible && (
+                <td className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-zinc-600 dark:text-zinc-400">{s.fatherName}</td>
+              )}
               {extraColumns.map(col => (
                 <td key={col} className="border-r border-zinc-200 dark:border-zinc-800 px-3 py-2 text-zinc-600 dark:text-zinc-400">{s.extraData[col] || ''}</td>
               ))}
@@ -243,7 +326,7 @@ const AttendanceTable = memo(function AttendanceTable({ config, workingDays }: {
           {/* Summary Row */}
           {students.length > 0 && (
             <tr className="bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-white border-t-2 border-zinc-900 dark:border-zinc-700">
-              <td colSpan={4 + extraColumns.length} className="border-r border-zinc-300 dark:border-zinc-700 px-4 py-2.5 text-right text-[10px] uppercase tracking-widest font-bold">Total Working Days →</td>
+              <td colSpan={totalLeadingCols} className="border-r border-zinc-300 dark:border-zinc-700 px-4 py-2.5 text-right text-[10px] uppercase tracking-widest font-bold">Total Working Days →</td>
               {workingDays.map(d => (
                 <td key={d} className="border-r border-zinc-300 dark:border-zinc-700 p-0 text-center text-[8px] text-zinc-400">·</td>
               ))}

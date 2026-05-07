@@ -1,4 +1,5 @@
 import type { AttendanceConfig, Student } from './types'
+import { defaultColumnVisibility } from './types'
 
 const MONTH_NAMES = [
   'January','February','March','April','May','June',
@@ -46,6 +47,14 @@ export function parseStudentText(text: string, extraColumns: string[]): Student[
   })
 }
 
+/** Migrate a config to ensure columnVisibility always exists */
+function migrateConfig(cfg: AttendanceConfig): AttendanceConfig {
+  if (!cfg.columnVisibility) {
+    return { ...cfg, columnVisibility: { ...defaultColumnVisibility } }
+  }
+  return cfg
+}
+
 export function saveWorkspace(state: import('./types').WorkspaceState) {
   try {
     localStorage.setItem('attendanceWorkspace', JSON.stringify(state))
@@ -55,7 +64,12 @@ export function saveWorkspace(state: import('./types').WorkspaceState) {
 export function loadWorkspace(): import('./types').WorkspaceState | null {
   try {
     const raw = localStorage.getItem('attendanceWorkspace')
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const ws = JSON.parse(raw)
+      // Migrate all profiles to ensure columnVisibility exists
+      ws.profiles = ws.profiles.map((p: any) => ({ ...p, config: migrateConfig(p.config) }))
+      return ws
+    }
     
     // Migration from old single config
     const oldRaw = localStorage.getItem('attendanceConfig')
@@ -64,9 +78,10 @@ export function loadWorkspace(): import('./types').WorkspaceState | null {
       return {
         activeProfileId: 'default',
         darkMode: oldCfg.darkMode || false,
-        profiles: [{ id: 'default', name: 'Default Profile', config: oldCfg }]
+        profiles: [{ id: 'default', name: 'Default Profile', config: migrateConfig(oldCfg) }]
       }
     }
   } catch {}
   return null
 }
+

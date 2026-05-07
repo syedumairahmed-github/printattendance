@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react'
 import type { AttendanceConfig, Student } from './types'
+import { defaultColumnVisibility } from './types'
 import { parseStudentText } from './utils'
 import { Tooltip } from './Tooltip'
 import { Users, ClipboardPaste, X, AlertCircle, FilePlus2, FileText } from 'lucide-react'
@@ -161,36 +162,46 @@ export function StudentImportStep({ config, onChange }: Props) {
             <div className="max-h-72 overflow-y-auto hide-scrollbar">
               <table className="w-full text-sm text-left" role="table">
                 <thead className="bg-zinc-50 dark:bg-zinc-900 sticky top-0 z-10 box-border border-b border-zinc-200 dark:border-zinc-800">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">ID</th>
-                    <th className="px-4 py-3 font-semibold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">Name</th>
-                    <th className="px-4 py-3 font-semibold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">Father Name</th>
-                    {config.extraColumns.map(col => (
-                      <th key={col} className="px-4 py-3 font-semibold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">{col}</th>
-                    ))}
-                    <th className="px-4 py-3 w-10"></th>
-                  </tr>
+                  {(() => {
+                    const colVis = config.columnVisibility ?? defaultColumnVisibility
+                    return (
+                      <tr>
+                        {colVis.serialNo.visible   && <th className="px-4 py-3 font-semibold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">{colVis.serialNo.label}</th>}
+                        {colVis.id.visible         && <th className="px-4 py-3 font-semibold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">{colVis.id.label}</th>}
+                        {colVis.name.visible       && <th className="px-4 py-3 font-semibold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">{colVis.name.label}</th>}
+                        {colVis.fatherName.visible && <th className="px-4 py-3 font-semibold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">{colVis.fatherName.label}</th>}
+                        {config.extraColumns.map(col => (
+                          <th key={col} className="px-4 py-3 font-semibold text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">{col}</th>
+                        ))}
+                        <th className="px-4 py-3 w-10"></th>
+                      </tr>
+                    )
+                  })()}
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
-                  {config.students.map((s) => (
-                    <tr key={s.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group">
-                      <td className="px-4 py-2.5 text-zinc-500 font-mono text-xs">{s.id}</td>
-                      <td className="px-4 py-2.5 font-medium text-zinc-900 dark:text-zinc-100">{s.name}</td>
-                      <td className="px-4 py-2.5 text-zinc-600 dark:text-zinc-400">{s.fatherName}</td>
-                      {config.extraColumns.map(col => (
-                        <td key={col} className="px-4 py-2.5 text-zinc-600 dark:text-zinc-400">{s.extraData[col] || '—'}</td>
-                      ))}
-                      <td className="px-4 py-2.5 text-right">
-                        <button
-                          onClick={() => removeStudent(s.id)}
-                          className="p-1 text-zinc-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded opacity-0 group-hover:opacity-100 transition-all outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-rose-500"
-                          aria-label={`Remove student ${s.name}`}
-                        >
-                          <X size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {config.students.map((s, idx) => {
+                    const colVis = config.columnVisibility ?? defaultColumnVisibility
+                    return (
+                      <tr key={s.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors group">
+                        {colVis.serialNo.visible   && <td className="px-4 py-2.5 text-zinc-400 font-mono text-xs text-center">{idx + 1}</td>}
+                        {colVis.id.visible         && <td className="px-4 py-2.5 text-zinc-500 font-mono text-xs">{s.id}</td>}
+                        {colVis.name.visible       && <td className="px-4 py-2.5 font-medium text-zinc-900 dark:text-zinc-100">{s.name}</td>}
+                        {colVis.fatherName.visible && <td className="px-4 py-2.5 text-zinc-600 dark:text-zinc-400">{s.fatherName}</td>}
+                        {config.extraColumns.map(col => (
+                          <td key={col} className="px-4 py-2.5 text-zinc-600 dark:text-zinc-400">{s.extraData[col] || '—'}</td>
+                        ))}
+                        <td className="px-4 py-2.5 text-right">
+                          <button
+                            onClick={() => removeStudent(s.id)}
+                            className="p-1 text-zinc-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded opacity-0 group-hover:opacity-100 transition-all outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-rose-500"
+                            aria-label={`Remove student ${s.name}`}
+                          >
+                            <X size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

@@ -1,21 +1,59 @@
 import React, { useState } from 'react'
-import type { AttendanceConfig, HeaderLayout } from './types'
+import type { AttendanceConfig, HeaderLayout, ColumnVisibility } from './types'
+import { defaultColumnVisibility } from './types'
 import { Tooltip } from './Tooltip'
-import { School, User2, BookOpen, Layers, LayoutTemplate, Plus, X } from 'lucide-react'
+import { School, User2, BookOpen, Layers, LayoutTemplate, Plus, X, Eye, EyeOff, Pencil } from 'lucide-react'
 
 interface Props {
   config: AttendanceConfig
   onChange: (partial: Partial<AttendanceConfig>) => void
 }
 
-const layouts: { id: HeaderLayout; label: string; desc: string; icon: React.ReactNode } = [
+const layouts: { id: HeaderLayout; label: string; desc: string; icon: React.ReactNode }[] = [
   { id: 'centered', label: 'Centered', desc: 'Logo and text centered', icon: <div className="w-6 h-4 border-2 border-current rounded mx-auto flex flex-col items-center justify-center gap-0.5"><div className="w-1/2 h-0.5 bg-current rounded-full"/><div className="w-1/3 h-0.5 bg-current rounded-full"/></div> },
   { id: 'split', label: 'Split View', desc: 'Name left, details right', icon: <div className="w-6 h-4 border-2 border-current rounded mx-auto flex items-center justify-between px-0.5"><div className="w-1/3 h-0.5 bg-current rounded-full"/><div className="w-1/3 h-0.5 bg-current rounded-full"/></div> },
   { id: 'boxed-left', label: 'Boxed Left', desc: 'Boxed left-aligned header', icon: <div className="w-6 h-4 border-2 border-current rounded mx-auto flex flex-col items-start justify-center px-0.5 gap-0.5"><div className="w-1/2 h-0.5 bg-current rounded-full"/><div className="w-3/4 h-0.5 bg-current rounded-full"/></div> },
 ]
 
+// The 4 default columns in display order
+const DEFAULT_COLS: { key: keyof ColumnVisibility; defaultLabel: string }[] = [
+  { key: 'serialNo',   defaultLabel: '#' },
+  { key: 'id',         defaultLabel: 'ID' },
+  { key: 'name',       defaultLabel: 'Student Name' },
+  { key: 'fatherName', defaultLabel: "Father's Name" },
+]
+
 export function BrandingStep({ config, onChange }: Props) {
   const [newCol, setNewCol] = useState('')
+  // which column label is currently being edited
+  const [editingKey, setEditingKey] = useState<keyof ColumnVisibility | null>(null)
+  const [editingLabel, setEditingLabel] = useState('')
+
+  // Ensure columnVisibility always exists (migration from old data)
+  const colVis: ColumnVisibility = config.columnVisibility ?? defaultColumnVisibility
+
+  function updateColVis(key: keyof ColumnVisibility, patch: Partial<{ visible: boolean; label: string }>) {
+    onChange({
+      columnVisibility: {
+        ...colVis,
+        [key]: { ...colVis[key], ...patch },
+      },
+    })
+  }
+
+  function startEdit(key: keyof ColumnVisibility) {
+    setEditingKey(key)
+    setEditingLabel(colVis[key].label)
+  }
+
+  function commitEdit() {
+    if (editingKey) {
+      const trimmed = editingLabel.trim()
+      if (trimmed) updateColVis(editingKey, { label: trimmed })
+    }
+    setEditingKey(null)
+    setEditingLabel('')
+  }
 
   function addColumn() {
     const col = newCol.trim()
@@ -154,10 +192,91 @@ export function BrandingStep({ config, onChange }: Props) {
               </span>
             ))}
             {config.extraColumns.length === 0 && (
-              <span className="text-sm text-zinc-400 italic">No extra columns mapped yet.</span>
+              <span className="text-sm text-zinc-400 italic">No extra columns added yet.</span>
             )}
           </div>
         </div>
+      </div>
+
+      {/* Column Visibility & Rename */}
+      <div className="pt-2">
+        <label className="flex items-center gap-2 text-sm font-semibold mb-3 text-zinc-900 dark:text-zinc-100">
+          <Eye size={16} className="text-zinc-400" /> Default Column Visibility
+          <Tooltip text="Toggle which default columns appear on the attendance sheet. Click the pencil icon to rename any column header." />
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {DEFAULT_COLS.map(({ key, defaultLabel }) => {
+            const col = colVis[key]
+            const isEditing = editingKey === key
+            return (
+              <div
+                key={key}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+                  col.visible
+                    ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700'
+                    : 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200/60 dark:border-zinc-800/60 opacity-60'
+                }`}
+              >
+                {/* Toggle */}
+                <button
+                  onClick={() => updateColVis(key, { visible: !col.visible })}
+                  aria-label={col.visible ? `Hide ${col.label}` : `Show ${col.label}`}
+                  className={`relative inline-flex w-10 h-5 flex-shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 ${
+                    col.visible ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-300 dark:bg-zinc-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block w-4 h-4 mt-0.5 rounded-full bg-white dark:bg-zinc-900 shadow transition-transform ${
+                      col.visible ? 'translate-x-5' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+
+                {/* Label / Edit input */}
+                <div className="flex-1 min-w-0">
+                  {isEditing ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editingLabel}
+                      onChange={e => setEditingLabel(e.target.value)}
+                      onBlur={commitEdit}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') commitEdit()
+                        if (e.key === 'Escape') { setEditingKey(null); setEditingLabel('') }
+                      }}
+                      className="w-full text-sm font-medium bg-transparent border-b border-zinc-400 focus:outline-none focus:border-zinc-900 dark:focus:border-white text-zinc-900 dark:text-white pb-0.5"
+                    />
+                  ) : (
+                    <span className={`text-sm font-medium truncate block ${col.visible ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-600 line-through'}`}>
+                      {col.label}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider">{defaultLabel}</span>
+                </div>
+
+                {/* Rename button */}
+                {!isEditing && (
+                  <button
+                    onClick={() => startEdit(key)}
+                    aria-label={`Rename ${col.label}`}
+                    className="p-1 text-zinc-300 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors flex-shrink-0"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                )}
+
+                {/* Visibility icon */}
+                <span className="text-zinc-300 dark:text-zinc-600 flex-shrink-0">
+                  {col.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+        <p className="text-[11px] text-zinc-400 mt-2">
+          Hidden columns won't appear in the preview, Excel, or PDF exports.
+        </p>
       </div>
     </div>
   )

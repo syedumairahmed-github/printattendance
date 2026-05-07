@@ -27,7 +27,7 @@ export function ColumnMapper({ headers, data, onMap, onCancel }: ColumnMapperPro
     setMapping(newMapping)
   }, [headers])
 
-  const isValid = mapping.id && mapping.name && mapping.fatherName
+  const isValid = !!mapping.name
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -43,9 +43,9 @@ export function ColumnMapper({ headers, data, onMap, onCancel }: ColumnMapperPro
 
       <div className="space-y-4">
         {[
-          { key: 'id', label: 'Student ID / Roll No', required: true },
+          { key: 'id', label: 'Student ID / Roll No', required: false },
           { key: 'name', label: 'Student Name', required: true },
-          { key: 'fatherName', label: "Father's Name", required: true },
+          { key: 'fatherName', label: "Father's Name", required: false },
         ].map(field => (
           <div key={field.key} className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
             <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
